@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { absoluteUrl } from "@/utils/urls";
 
 /** Square PWA / favicon routes generated from the CMS logo via sharp. */
@@ -10,7 +11,7 @@ export function pwaIconUrl(size: 192 | 512): string {
 }
 
 /** Next.js Metadata `icons` — never point at arbitrary CMS logo dimensions. */
-export function pwaMetadataIcons() {
+export function pwaMetadataIcons(): NonNullable<Metadata["icons"]> {
   return {
     icon: [
       {
@@ -32,5 +33,5 @@ export function pwaMetadataIcons() {
         type: "image/png",
       },
     ],
-  } as const;
+  };
 }
