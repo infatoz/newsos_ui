@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NewsPortal frontend (Next.js 16)
 
-## Getting Started
+Headless news UI for the Enterprise News Manager + WPGraphQL stack.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 22+
+- WordPress with WPGraphQL + Enterprise News Manager (Laragon or Docker)
+- GraphQL reachable at your `NEXT_PUBLIC_GRAPHQL_ENDPOINT`
+
+## Get started
 
 ```bash
+cd frontend
+cp .env.example .env.local
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Minimal `.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_GRAPHQL_ENDPOINT=http://localhost/graphql
+NEXT_PUBLIC_SITE_NAME=NewsPortal
+PREVIEW_SECRET=local-preview-secret
+REVALIDATE_SECRET=local-revalidate-secret
+```
 
-## Learn More
+Full variable reference: [../docs/ENVIRONMENT.md](../docs/ENVIRONMENT.md).
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Dev server |
+| `npm run build` | Production build (`output: "standalone"` for Docker) |
+| `npm start` | Serve production build |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier |
+| `npm run codegen` | GraphQL Code Generator |
+| `npm test` | Jest unit tests |
+| `npm run test:e2e` | Playwright e2e |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Docker
 
-## Deploy on Vercel
+```bash
+docker compose up --build
+# with Redis:
+docker compose --profile cache up --build
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+See `Dockerfile`, `docker/nginx.conf`, and monorepo [../docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project map
+
+- `src/app` — App Router pages & API routes
+- `src/graphql` — queries, mutations, fragments
+- `src/services` — data fetching + ISR tags
+- `src/seo` — metadata & JSON-LD
+- `src/components` — atoms / molecules / organisms
+
+Monorepo docs: [../docs/](../docs/) · Architecture: [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).

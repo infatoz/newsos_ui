@@ -1,26 +1,308 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Reserved ad slots — CLS-safe responsive sizes */
+.ad-slot-reserve {
+  position: relative;
+  background: color-mix(in srgb, var(--np-surface, #f8fafc) 80%, transparent);
 }
+
+@media (max-width: 767px) {
+  .ad-slot-reserve[data-mobile-w] {
+    max-width: min(100%, calc(var(--ad-mw) * 1px)) !important;
+    aspect-ratio: var(--ad-mw) / var(--ad-mh) !important;
+  }
+}
+
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Newsroom tokens — overridden at runtime by themeConfig / ThemeProvider */
+  --np-primary: #0b1f3a;
+  --np-secondary: #c8102e;
+  --np-accent: #c8102e;
+  --np-background: #f7f8fa;
+  --np-text: #1a1a1a;
+  --np-muted: color-mix(in srgb, var(--np-text) 55%, var(--np-background));
+  --np-border: color-mix(in srgb, var(--np-text) 12%, var(--np-background));
+  --np-surface: #ffffff;
+  --np-breaking: #c8102e;
+  --np-live: #b91c1c;
+  --primary: var(--np-primary);
+  --accent: var(--np-accent);
+
+  --background: var(--np-background);
+  --foreground: var(--np-text);
+  --card: var(--np-surface);
+  --card-foreground: var(--np-text);
+  --popover: var(--np-surface);
+  --popover-foreground: var(--np-text);
+  --primary-foreground: #ffffff;
+  --secondary: color-mix(in srgb, var(--np-primary) 8%, white);
+  --secondary-foreground: var(--np-primary);
+  --muted: color-mix(in srgb, var(--np-text) 6%, var(--np-background));
+  --muted-foreground: var(--np-muted);
+  --accent-foreground: #ffffff;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: var(--np-border);
+  --input: var(--np-border);
+  --ring: color-mix(in srgb, var(--np-primary) 40%, transparent);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes np-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@utility font-heading {
+  font-family: var(--np-font, var(--font-news, Georgia, "Times New Roman", serif));
+}
+
+/* Google News / Discover / Top Stories — clean article typography */
+.news-article__body .np-prose {
+  font-size: var(--article-font-size, 1.0625rem);
+  line-height: var(--article-line-height, 1.75);
+  color: var(--np-text);
+}
+
+.news-article__body .np-prose p {
+  margin: 0 0 1.25rem;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.news-article__body .np-prose h2 {
+  font-family: var(--font-heading), Georgia, serif;
+  font-size: 1.5rem;
+  line-height: 1.3;
+  margin: 2rem 0 0.75rem;
+  color: var(--np-primary);
+}
+
+.news-article__body .np-prose h3 {
+  font-family: var(--font-heading), Georgia, serif;
+  font-size: 1.25rem;
+  margin: 1.75rem 0 0.5rem;
+  color: var(--np-primary);
+}
+
+.news-article__body .np-prose img,
+.news-article__body .np-prose figure {
+  margin: 1.5rem 0;
+  max-width: 100%;
+  height: auto;
+}
+
+.news-article__body .np-prose figure {
+  display: block;
+}
+
+.news-article__body .np-prose figure > img,
+.news-article__body .np-prose .wp-block-image img,
+.news-article__body .np-prose .wp-caption img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+}
+
+.news-article__hero-caption,
+.news-article__body .np-prose figcaption,
+.news-article__body .np-prose .wp-caption-text,
+.news-article__body .np-prose .wp-element-caption,
+.news-article__body .np-prose .np-image-caption {
+  display: block !important;
+  visibility: visible !important;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  max-width: 100%;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--np-muted);
+  font-style: italic;
+  text-align: left;
+  opacity: 1;
+}
+
+.news-article__body .np-prose .wp-caption {
+  margin: 1.5rem 0;
+  max-width: 100%;
+}
+
+.news-article__body .np-prose .wp-block-image {
+  margin: 1.5rem 0;
+}
+
+.news-article__body .np-prose .wp-block-image figcaption {
+  margin-top: 0.5rem;
+}
+
+.news-article__body .np-prose a {
+  color: var(--np-accent);
+  text-underline-offset: 2px;
+}
+
+.news-article__body .np-prose blockquote {
+  margin: 1.5rem 0;
+  padding: 0.75rem 0 0.75rem 1rem;
+  border-left: 3px solid var(--np-accent);
+  color: var(--np-muted);
+  font-style: italic;
+}
+
+/* CLS-safe lazy images — reserved box + placeholder while decoding */
+.np-lazy-img {
+  background-color: var(--np-border);
+  background-image: var(--np-image-placeholder);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.np-article-image {
+  display: block;
+  width: 100%;
+}
+
+.np-image-shimmer {
+  background-image: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--np-border) 100%, transparent) 0%,
+    color-mix(in srgb, var(--np-surface) 70%, var(--np-border)) 40%,
+    color-mix(in srgb, var(--np-border) 100%, transparent) 80%
+  );
+  background-size: 200% 100%;
+  animation: np-shimmer 1.2s ease-in-out infinite;
+}
+
+.np-article-image[data-placeholder="true"] .np-image-shimmer {
+  animation: none;
+  background-image: var(--np-image-placeholder);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+@keyframes np-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .np-image-shimmer {
+    animation: none;
+  }
 }

@@ -1,0 +1,2 @@
+# Place GraphQL operations (*.graphql) and shared fragments here.
+# Run `npm run codegen` to generate TypeScript types + Apollo hooks into ./generated/

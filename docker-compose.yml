@@ -1,0 +1,67 @@
+# Frontend-only stack (Next.js + optional Redis for cache / rate limits)
+# Usage:
+#   cd frontend
+#   docker compose up --build
+#
+# For full WordPress + MySQL + frontend, use the monorepo root:
+#   C:\laragon\www\docker-compose.yml
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_GRAPHQL_ENDPOINT: ${NEXT_PUBLIC_GRAPHQL_ENDPOINT:-http://host.docker.internal/graphql}
+        NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-NewsPortal}
+        NEXT_PUBLIC_CDN_URL: ${NEXT_PUBLIC_CDN_URL:-}
+    image: newsportal-frontend:latest
+    container_name: newsportal-frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_GRAPHQL_ENDPOINT: ${NEXT_PUBLIC_GRAPHQL_ENDPOINT:-http://host.docker.internal/graphql}
+      NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-NewsPortal}
+      NEXT_PUBLIC_CDN_URL: ${NEXT_PUBLIC_CDN_URL:-}
+      PREVIEW_SECRET: ${PREVIEW_SECRET:-}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_started
+        required: false
+    networks:
+      - newsportal
+    restart: unless-stopped
+
+  # Optional — enable with: docker compose --profile cache up
+  redis:
+    image: redis:7-alpine
+    container_name: newsportal-redis
+    profiles: ["cache"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - newsportal
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+networks:
+  newsportal:
+    name: newsportal
+    driver: bridge
+
+volumes:
+  redis_data:

@@ -1,0 +1,47 @@
+# Dependencies & build
+node_modules
+.next
+out
+dist
+coverage
+*.tsbuildinfo
+
+# Git / IDE
+.git
+.gitignore
+.cursor
+.vscode
+.idea
+*.md
+!README.md
+
+# Env & secrets (never bake into images)
+.env
+.env.*
+!.env.example
+
+# Tests & tooling
+tests
+playwright-report
+test-results
+jest.config.*
+playwright.config.*
+eslint.config.*
+.prettierrc
+.prettierignore
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Misc
+Dockerfile*
+docker-compose*.yml
+docker
+docs
+AGENTS.md
+CLAUDE.md
+npm-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
