@@ -1,10 +1,5 @@
 import type { Metadata } from "next";
-import {
-  Source_Serif_4,
-  Source_Sans_3,
-  Geist,
-  Geist_Mono,
-} from "next/font/google";
+import { Source_Serif_4, Source_Sans_3 } from "next/font/google";
 import { ThemeProvider, ThemeStyleTag } from "@/providers/theme-provider";
 import { AppApolloProvider as ApolloProvider } from "@/providers/apollo-provider";
 import { themeConfig, getCssVariables } from "@/config/theme";
@@ -20,11 +15,15 @@ import { absoluteUrl } from "@/utils/urls";
 import { pwaIconPath } from "@/utils/pwa-icons";
 import "./globals.css";
 
+// Two families only — extra webfonts compete with the LCP image on mobile.
 const sourceSerif = Source_Serif_4({
   variable: "--font-serif",
   subsets: ["latin"],
   display: "optional",
   adjustFontFallback: true,
+  // display:optional fonts often unused on first paint — don't preload
+  // (avoids Chrome "preloaded but not used" console warnings).
+  preload: false,
 });
 
 const sourceSans = Source_Sans_3({
@@ -32,21 +31,30 @@ const sourceSans = Source_Sans_3({
   subsets: ["latin"],
   display: "optional",
   adjustFontFallback: true,
+  preload: false,
 });
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "optional",
-  adjustFontFallback: true,
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "optional",
-  adjustFontFallback: true,
-});
+function mediaOriginFromEnv(): string | null {
+  const candidates = [
+    process.env.NEXT_PUBLIC_CDN_URL,
+    process.env.NEXT_PUBLIC_LOGO,
+    process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT,
+  ];
+  for (const value of candidates) {
+    if (!value?.trim()) continue;
+    try {
+      const url = new URL(
+        value.includes("://") ? value : `https://${value}`,
+      );
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        return url.origin;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return null;
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const [branding, locale] = await Promise.all([
@@ -78,6 +86,7 @@ export default async function RootLayout({
     : absoluteUrl(branding.logoUrl);
   const icon192 = pwaIconPath(192);
   const icon512 = pwaIconPath(512);
+  const mediaOrigin = mediaOriginFromEnv();
 
   const orgLd = organizationJsonLd({
     name: branding.siteName,
@@ -103,10 +112,16 @@ export default async function RootLayout({
   return (
     <html
       lang={locale.htmlLang}
-      className={`${sourceSerif.variable} ${sourceSans.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${sourceSerif.variable} ${sourceSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
+        {mediaOrigin ? (
+          <>
+            <link rel="preconnect" href={mediaOrigin} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={mediaOrigin} />
+          </>
+        ) : null}
         <ThemeStyleTag />
         <style
           id="np-root-font"

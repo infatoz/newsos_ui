@@ -1,29 +1,46 @@
 import type { NextConfig } from "next";
 
-const wordpressHost =
-  process.env.NEXT_PUBLIC_WP_HOST ||
-  process.env.WORDPRESS_HOSTNAME ||
-  "localhost";
-
-const cdnHost = (() => {
-  const cdn = process.env.NEXT_PUBLIC_CDN_URL;
-  if (!cdn) return null;
+function hostnameFromUrl(value?: string | null): string | null {
+  if (!value?.trim()) return null;
   try {
-    return new URL(cdn).hostname;
+    const raw = value.trim();
+    const url = new URL(raw.includes("://") ? raw : `https://${raw}`);
+    return url.hostname || null;
   } catch {
     return null;
   }
-})();
+}
 
-const siteHost = (() => {
-  try {
-    return new URL(
-      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-    ).hostname;
-  } catch {
-    return "localhost";
+/**
+ * Hosts allowed for next/image. On Vercel, if NEXT_PUBLIC_WP_HOST is missing,
+ * derive it from the GraphQL / logo URLs so CMS media is not rejected (HTTP 400).
+ */
+function collectImageHosts(): string[] {
+  const hosts = new Set<string>();
+
+  const candidates = [
+    process.env.NEXT_PUBLIC_WP_HOST,
+    process.env.WORDPRESS_HOSTNAME,
+    hostnameFromUrl(process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT),
+    hostnameFromUrl(process.env.NEXT_PUBLIC_LOGO),
+    hostnameFromUrl(process.env.NEXT_PUBLIC_FAVICON),
+    hostnameFromUrl(process.env.NEXT_PUBLIC_CDN_URL),
+    hostnameFromUrl(process.env.NEXT_PUBLIC_SITE_URL),
+    "localhost",
+    "127.0.0.1",
+    // Production CMS used by newsos_ui / Karnataka Cricket
+    "api.karnatakacricket.com",
+  ];
+
+  for (const host of candidates) {
+    const cleaned = host?.trim().toLowerCase();
+    if (cleaned) hosts.add(cleaned);
   }
-})();
+
+  return [...hosts];
+}
+
+const imageHosts = collectImageHosts();
 
 const securityHeaders = [
   {
@@ -74,73 +91,27 @@ const securityHeaders = [
 
 const remotePatterns: NonNullable<
   NonNullable<NextConfig["images"]>["remotePatterns"]
-> = [
-  {
-    protocol: "http",
-    hostname: wordpressHost,
-    pathname: "/**",
-  },
-  {
-    protocol: "https",
-    hostname: wordpressHost,
-    pathname: "/**",
-  },
-  {
-    protocol: "http",
-    hostname: "localhost",
-    pathname: "/**",
-  },
-  {
-    protocol: "https",
-    hostname: "**.wp.com",
-    pathname: "/**",
-  },
-  {
-    protocol: "https",
-    hostname: "i0.wp.com",
-    pathname: "/**",
-  },
-  {
-    protocol: "https",
-    hostname: "i1.wp.com",
-    pathname: "/**",
-  },
-  {
-    protocol: "https",
-    hostname: "i2.wp.com",
-    pathname: "/**",
-  },
-  {
-    protocol: "https",
-    hostname: "secure.gravatar.com",
-    pathname: "/**",
-  },
-  {
-    protocol: "https",
-    hostname: "images.unsplash.com",
-    pathname: "/**",
-  },
-];
+> = [];
 
-if (cdnHost) {
+for (const hostname of imageHosts) {
   remotePatterns.push(
-    {
-      protocol: "https",
-      hostname: cdnHost,
-      pathname: "/**",
-    },
-    {
-      protocol: "http",
-      hostname: cdnHost,
-      pathname: "/**",
-    },
+    { protocol: "https", hostname, pathname: "/**" },
+    { protocol: "http", hostname, pathname: "/**" },
   );
 }
 
-if (siteHost && siteHost !== wordpressHost && siteHost !== "localhost") {
+// Third-party media commonly used by WordPress / demos
+for (const hostname of [
+  "**.wp.com",
+  "i0.wp.com",
+  "i1.wp.com",
+  "i2.wp.com",
+  "secure.gravatar.com",
+  "images.unsplash.com",
+]) {
   remotePatterns.push({
     protocol: "https",
-    hostname: siteHost,
+    hostname,
     pathname: "/**",
   });
 }
@@ -154,8 +125,9 @@ const nextConfig: NextConfig = {
     dangerouslyAllowLocalIP: true,
     remotePatterns,
     formats: ["image/avif", "image/webp"],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24,
   },
   poweredByHeader: false,
   compress: true,

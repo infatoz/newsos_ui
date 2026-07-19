@@ -166,61 +166,72 @@ export async function getPostBySlug(
     throwOnError: false,
   };
 
+  let lastError: unknown = null;
+  let reachedCms = false;
+
+  async function attempt<T>(fn: () => Promise<T>): Promise<T | null> {
+    try {
+      const result = await fn();
+      reachedCms = true;
+      return result;
+    } catch (error) {
+      lastError = error;
+      return null;
+    }
+  }
+
   // 1) Direct SLUG lookup with NFC-decoded slug (primary)
-  try {
-    const bySlug = await fetchQuery<{ post: Post | null }>(
+  const bySlug = await attempt(() =>
+    fetchQuery<{ post: Post | null }>(
       GET_POST_BY_SLUG,
       { slug: decoded },
       opts,
-    );
-    if (bySlug.post) return bySlug.post;
-  } catch {
-    // continue
-  }
+    ),
+  );
+  if (bySlug?.post) return bySlug.post;
 
   // 2) posts(where: { name }) — most reliable for Unicode post_name
-  try {
-    const byName = await fetchQuery<{ posts: { nodes: Post[] } }>(
+  const byName = await attempt(() =>
+    fetchQuery<{ posts: { nodes: Post[] } }>(
       GET_POST_BY_NAME,
       { name: decoded },
       opts,
-    );
-    if (byName.posts?.nodes?.[0]) return byName.posts.nodes[0];
-  } catch {
-    // continue
-  }
+    ),
+  );
+  if (byName?.posts?.nodes?.[0]) return byName.posts.nodes[0];
 
   // 3) URI / nodeByUri candidates (WP permalinks + /article/ paths)
   for (const candidate of slugLookupCandidates(slug)) {
-    try {
-      const byUri = await fetchQuery<{ post: Post | null }>(
+    const byUri = await attempt(() =>
+      fetchQuery<{ post: Post | null }>(
         GET_POST_BY_URI,
         { uri: candidate },
         opts,
-      );
-      if (byUri.post) return byUri.post;
-    } catch {
-      // continue
-    }
+      ),
+    );
+    if (byUri?.post) return byUri.post;
 
-    try {
-      const byNode = await fetchQuery<{
+    const byNode = await attempt(() =>
+      fetchQuery<{
         nodeByUri:
           | (Post & { __typename?: string })
           | Record<string, unknown>
           | null;
-      }>(GET_NODE_BY_URI, { uri: candidate }, opts);
-      const node = byNode.nodeByUri;
-      if (!node) continue;
-      if (
-        (node as { __typename?: string }).__typename === "Post" ||
-        typeof (node as Post).databaseId === "number"
-      ) {
-        return node as Post;
-      }
-    } catch {
-      // continue
+      }>(GET_NODE_BY_URI, { uri: candidate }, opts),
+    );
+    const node = byNode?.nodeByUri;
+    if (!node) continue;
+    if (
+      (node as { __typename?: string }).__typename === "Post" ||
+      typeof (node as Post).databaseId === "number"
+    ) {
+      return node as Post;
     }
+  }
+
+  // CMS unreachable → surface as error (500/retry) instead of a fake 404.
+  if (!reachedCms && lastError) {
+    throw lastError;
   }
 
   return null;

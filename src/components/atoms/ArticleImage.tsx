@@ -80,6 +80,14 @@ export function ArticleImage({
   const showImmediately = priority || isPlaceholder;
   const isVisible = showImmediately || loaded;
 
+  // Priority photos: skip the /_next/image hop if the URL is already a
+  // full remote CMS / CDN URL — avoids optimizer 400s becoming LCP delay.
+  const preferDirectRemote =
+    priority &&
+    !isPlaceholder &&
+    /^https?:\/\//i.test(displaySrc) &&
+    !displaySrc.includes("/_next/image");
+
   return (
     <span
       className={cn(
@@ -115,7 +123,7 @@ export function ArticleImage({
           sizes={sizes}
           priority={priority}
           fetchPriority={priority ? "high" : undefined}
-          unoptimized={useUnoptimized}
+          unoptimized={useUnoptimized || preferDirectRemote}
           placeholder={
             useUnoptimized || isPlaceholder || priority ? "empty" : "blur"
           }
@@ -145,7 +153,7 @@ export function ArticleImage({
           sizes={sizes}
           priority={priority}
           fetchPriority={priority ? "high" : undefined}
-          unoptimized={useUnoptimized}
+          unoptimized={useUnoptimized || preferDirectRemote}
           placeholder={
             useUnoptimized || isPlaceholder || priority ? "empty" : "blur"
           }

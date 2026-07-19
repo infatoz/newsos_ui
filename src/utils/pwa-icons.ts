@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { absoluteUrl } from "@/utils/urls";
 
-/** Square PWA / favicon routes generated from the CMS logo via sharp. */
+/**
+ * Static PNGs in /public/icons — avoids Turbopack/sharp 500s in dev
+ * and keeps the web manifest on reliable, correctly sized assets.
+ */
 export function pwaIconPath(size: 192 | 512): string {
-  return `/icons/icon/${size}`;
+  return size === 512 ? "/icons/icon-512.png" : "/icons/icon-192.png";
 }
 
 export function pwaIconUrl(size: 192 | 512): string {

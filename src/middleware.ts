@@ -13,6 +13,7 @@ const RESERVED_ROOT = new Set([
   "amp",
   "api",
   "icons",
+  "icon",
   "stories",
   "videos",
   "photos",

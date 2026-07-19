@@ -28,6 +28,7 @@ import { stripHtml } from "@/lib/utils";
 import { resolveArticleDisplayImage } from "@/utils/images";
 import { resolveMediaCaption } from "@/utils/caption";
 import { themeConfig } from "@/config/theme";
+import { defaultSiteLocale } from "@/utils/locale";
 
 export const revalidate = 300;
 
@@ -124,13 +125,21 @@ export async function generateMetadata({
 export default async function ArticlePage({ params }: PageProps) {
   const { slug: rawSlug } = await params;
 
-  const [post, branding, locale] = await Promise.all([
-    getPostBySlug(rawSlug, { revalidate: 300 }).catch(() => null),
-    getSiteBranding({ revalidate: 300 }),
-    getSiteLocale({ revalidate: 3600 }),
-  ]);
-
+  // Do not catch getPostBySlug — CMS outages must not become fake 404s.
+  const post = await getPostBySlug(rawSlug, { revalidate: 300 });
   if (!post) notFound();
+
+  const [branding, locale] = await Promise.all([
+    getSiteBranding({ revalidate: 300 }).catch(() => ({
+      siteName: themeConfig.siteName,
+      siteTagline: themeConfig.siteDescription,
+      logoUrl: themeConfig.logo,
+      faviconUrl: themeConfig.favicon || themeConfig.logo,
+      defaultOgImage: themeConfig.logo,
+      imagePlaceholder: themeConfig.imagePlaceholder,
+    })),
+    getSiteLocale({ revalidate: 3600 }).catch(() => defaultSiteLocale()),
+  ]);
 
   const slug = safeDecodeSlug(post.slug || rawSlug);
   const articlePath = contentPath(post.uri, slug);
@@ -182,32 +191,39 @@ export default async function ArticlePage({ params }: PageProps) {
   const category = post.categories?.nodes?.[0];
   const tags = post.tags?.nodes ?? [];
 
-  const sidebarBlocks = await getArticleSidebarBlocks({ revalidate: 120 });
-  const sidebarWidgets = await mapArticleSidebarWidgets(
-    sidebarBlocks,
-    {
-      postId: post.databaseId,
-      related,
-      author: author
-        ? {
-            id: author.id,
-            name: author.name,
-            slug: author.slug,
-            uri: author.uri,
-            avatar: author.avatar,
-            description:
-              "description" in author
-                ? (author as { description?: string | null }).description
-                : null,
-          }
-        : null,
-      articleTags: tags,
-      categoryId: category?.databaseId,
-      categorySlug: category?.slug,
-      sidebarAds,
-    },
-    { revalidate: 120 },
-  );
+  let sidebarWidgets: Awaited<
+    ReturnType<typeof mapArticleSidebarWidgets>
+  > = [];
+  try {
+    const sidebarBlocks = await getArticleSidebarBlocks({ revalidate: 120 });
+    sidebarWidgets = await mapArticleSidebarWidgets(
+      sidebarBlocks,
+      {
+        postId: post.databaseId,
+        related,
+        author: author
+          ? {
+              id: author.id,
+              name: author.name,
+              slug: author.slug,
+              uri: author.uri,
+              avatar: author.avatar,
+              description:
+                "description" in author
+                  ? (author as { description?: string | null }).description
+                  : null,
+            }
+          : null,
+        articleTags: tags,
+        categoryId: category?.databaseId,
+        categorySlug: category?.slug,
+        sidebarAds,
+      },
+      { revalidate: 120 },
+    );
+  } catch {
+    sidebarWidgets = [];
+  }
 
   const contentHtml = post.content ?? "";
   const rt = readingTime(contentHtml);

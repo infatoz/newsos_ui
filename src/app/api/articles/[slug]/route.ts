@@ -122,10 +122,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
         "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
       },
     });
-  } catch {
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to load article";
+    const isCmsDown =
+      message.includes("Failed to reach GraphQL") ||
+      message.includes("fetch failed") ||
+      message.includes("ECONNREFUSED");
     return NextResponse.json(
-      { message: "Failed to load article" },
-      { status: 500 },
+      { message: isCmsDown ? "CMS temporarily unavailable" : message },
+      { status: isCmsDown ? 503 : 500 },
     );
   }
 }
