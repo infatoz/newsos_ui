@@ -54,14 +54,24 @@ function buildDefaultRobots(): string {
  * robots.txt — custom from WP when set, otherwise generated defaults listing all sitemaps.
  */
 export async function GET() {
-  const seo = await getSeoSettings();
-  const custom = seo.robotsTxt?.trim();
-  const body = custom || buildDefaultRobots();
+  try {
+    const seo = await getSeoSettings();
+    const custom = seo.robotsTxt?.trim();
+    const body = custom || buildDefaultRobots();
 
-  return new Response(body.endsWith("\n") ? body : `${body}\n`, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
-    },
-  });
+    return new Response(body.endsWith("\n") ? body : `${body}\n`, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      },
+    });
+  } catch {
+    const body = buildDefaultRobots();
+    return new Response(body.endsWith("\n") ? body : `${body}\n`, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      },
+    });
+  }
 }
